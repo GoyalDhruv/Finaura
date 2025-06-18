@@ -4,14 +4,18 @@ import Link from 'next/link'
 import React from 'react'
 import { Button } from '../ui/button'
 import { LayoutDashboard, PenBox } from 'lucide-react'
+import { checkUser } from '@/lib/checkUser'
 
-function Navbar() {
+async function Navbar() {
+
+    await checkUser();
+
     return (
         <header className='fixed top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md'>
             <nav className='container mx-auto p-4 flex items-center justify-between'>
                 <Link href={'/'}>
                     {/* <Image height={60} width={200} className='h-12 w-auto object-contain'/> */}
-                    <div className='!text-4xl'>Finaura</div>
+                    <div className='!text-3xl font-extrabold tracking-tighter'>Finaura</div>
                 </Link>
                 <div className='flex items-center space-x-4'>
                     <SignedIn>
