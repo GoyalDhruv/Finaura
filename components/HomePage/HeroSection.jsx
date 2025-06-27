@@ -42,16 +42,16 @@ function HeroSection() {
             </p>
             <div className='mb-10'>
                 <Link href={'/dashboard'}>
-                    <Button size="lg" className='px-8 bg-[var(--primaryColor)]'>Get Started</Button>
+                    <Button size="lg" className='px-8 bg-[var(--primaryColor)] cursor-pointer'>Get Started</Button>
                 </Link>
             </div>
             <div className='hero-image-wrapper'>
                 <div ref={imageRef} className='hero-image'>
                     <Image
-                        src={""}
+                        src='/images/banner.jpg'
                         width={1280}
                         height={720}
-                        alt='Dashboard Preview'
+                        alt='Banner Image'
                         className='rounded-lg shadow-2xl border mx-auto'
                         priority
                     />

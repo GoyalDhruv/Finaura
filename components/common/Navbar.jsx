@@ -20,22 +20,23 @@ async function Navbar() {
                 <div className='flex items-center space-x-4'>
                     <SignedIn>
                         <Link href={'/dashboard'} className='text-gray-600 hover:text-blue-600 flex items-center gap-2'>
-                            <Button variant='outline'>
+                            <Button variant='outline' className='cursor-pointer'>
                                 <LayoutDashboard size={18} />
-                                <span className='hidden md:inline'>Dashboard</span></Button>
+                                <span className='hidden md:inline'>Dashboard</span>
+                            </Button>
                         </Link>
                         <Link href={'/transaction/create'}>
-                            <Button className='flex items-center gap-2'>
+                            <Button className='flex items-center gap-2 cursor-pointer'>
                                 <PenBox size={18} />
                                 <span className='hidden md:inline'>Add Transaction</span></Button>
                         </Link>
                     </SignedIn>
                     <SignedOut>
                         <SignInButton>
-                            <Button variant='outline'>Log In</Button>
+                            <Button variant='outline' className='cursor-pointer'>Log In</Button>
                         </SignInButton>
                         <SignUpButton>
-                            <Button>Sign Up</Button>
+                            <Button className='cursor-pointer'>Sign Up</Button>
                         </SignUpButton>
                     </SignedOut>
                     <SignedIn>
