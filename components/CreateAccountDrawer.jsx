@@ -45,7 +45,7 @@ const CreateAccountDrawer = ({ children }) => {
 
     useEffect(() => {
         if (error) {
-            toast.error(error.message || 'Failed to create account2')
+            toast.error(error.message || 'Failed to create account')
         }
     }, [error])
 
