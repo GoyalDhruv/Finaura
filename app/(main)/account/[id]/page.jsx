@@ -1,4 +1,4 @@
-import { getAccountWithTranscation } from '@/actions/account'
+import { getAccountWithTransaction } from '@/actions/account'
 import { notFound } from 'next/navigation'
 import React, { Suspense } from 'react'
 import { BarLoader } from 'react-spinners';
@@ -6,7 +6,7 @@ import TransactionTable from '../_components/transaction-table';
 
 const AccountPage = async ({ params }) => {
     const { id } = await params;
-    const accountData = await getAccountWithTranscation(id)
+    const accountData = await getAccountWithTransaction(id)
 
     if (!accountData) notFound()
 

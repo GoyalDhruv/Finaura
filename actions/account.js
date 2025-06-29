@@ -22,14 +22,14 @@ export async function updateDefaultAccount(accountId) {
 
         revalidatePath('/dashboard');
 
-        return { success: true, data: serializeTransaction(account) };
+        return { success: true, data: null };
 
     } catch (error) {
         return { success: false, error: error.message };
     }
 }
 
-export async function getAccountWithTranscation(accountId) {
+export async function getAccountWithTransaction(accountId) {
     try {
         const user = await getAuthenticatedUser();
 
