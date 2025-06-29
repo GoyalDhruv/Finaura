@@ -28,3 +28,27 @@ export async function updateDefaultAccount(accountId) {
         return { success: false, error: error.message };
     }
 }
+
+export async function getAccountWithTranscation(accountId) {
+    try {
+        const user = await getAuthenticatedUser();
+
+        const account = await db.account.findUnique({
+            where: { id: accountId, userId: user.id },
+            include: {
+                transactions: { orderBy: { createdAt: 'desc' } },
+                _count: { select: { transactions: true } }
+            }
+        })
+
+        if (!account) throw new Error("Account not found");
+
+        return {
+            ...serializeTransaction(account),
+            transactions: account.transactions.map(serializeTransaction)
+        }
+
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
