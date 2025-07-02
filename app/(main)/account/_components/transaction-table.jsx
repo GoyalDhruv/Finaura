@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { categoryColors } from '@/data/categories'
 import { useFetch } from '@/hooks/useFetch'
 import { format } from 'date-fns'
-import { ChevronDown, ChevronUp, Clock, MoreHorizontal, RefreshCw, Search, Trash, X } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, MoreHorizontal, RefreshCw, Search, Trash, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
 import { BarLoader } from 'react-spinners'
@@ -25,6 +25,8 @@ const RECURRING_INTERVALS = {
     YEARLY: 'Yearly'
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const TransactionTable = ({ transactions }) => {
 
     const router = useRouter()
@@ -36,6 +38,7 @@ const TransactionTable = ({ transactions }) => {
     const [search, setSearch] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [recurringFilter, setRecurringFilter] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
 
     const {
         loading: bulkDeleteLoading,
@@ -102,6 +105,17 @@ const TransactionTable = ({ transactions }) => {
         recurringFilter
     ])
 
+    const totalPages = Math.ceil(
+        filteredAndSortedTransactions.length / ITEMS_PER_PAGE
+    );
+    const paginatedTransactions = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredAndSortedTransactions.slice(
+            startIndex,
+            startIndex + ITEMS_PER_PAGE
+        );
+    }, [filteredAndSortedTransactions, currentPage]);
+
     const handleSort = (field) => {
         setSortConfig(current => ({
             field,
@@ -114,15 +128,25 @@ const TransactionTable = ({ transactions }) => {
     }
 
     const handleSelectAll = () => {
-        setSelectedIds(prev => prev.length === transactions.length ? [] : transactions.map(transaction => transaction.id))
-    }
+        setSelectedIds((current) =>
+            current.length === paginatedTransactions.length
+                ? []
+                : paginatedTransactions.map((t) => t.id)
+        );
+    };
 
     const handleClearFilters = () => {
         setSearch('');
         setTypeFilter('');
         setRecurringFilter('');
         setSelectedIds([]);
+        setCurrentPage(1);
     }
+
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+        setSelectedIds([]);
+    };
 
     return (
         <div className='space-y-4'>
@@ -137,7 +161,10 @@ const TransactionTable = ({ transactions }) => {
                         className='ps-8'
                         placeholder='Search Transactions ...'
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => {
+                            setSearch(e.target.value)
+                            setCurrentPage(1)
+                        }}
                     />
                 </div>
 
@@ -152,7 +179,13 @@ const TransactionTable = ({ transactions }) => {
                         </SelectContent>
                     </Select>
 
-                    <Select value={recurringFilter} onValueChange={setRecurringFilter}>
+                    <Select
+                        value={recurringFilter}
+                        onValueChange={(value) => {
+                            setRecurringFilter(value)
+                            setCurrentPage(1)
+                        }}
+                    >
                         <SelectTrigger className='w-[130px]'>
                             <SelectValue placeholder="All Types" />
                         </SelectTrigger>
@@ -191,7 +224,7 @@ const TransactionTable = ({ transactions }) => {
                         <TableRow>
                             <TableHead className="w-[50px]">
                                 <Checkbox
-                                    checked={selectedIds.length === transactions.length && selectedIds.length > 0}
+                                    checked={selectedIds.length === paginatedTransactions.length && paginatedTransactions.length > 0}
                                     onCheckedChange={handleSelectAll}
                                     className='cursor-pointer'
                                 />
@@ -249,14 +282,14 @@ const TransactionTable = ({ transactions }) => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredAndSortedTransactions?.length === 0 ?
+                        {paginatedTransactions?.length === 0 ?
                             <TableRow>
                                 <TableCell colSpan={7} className='text-center text-muted-foreground'>
                                     No transactions found
                                 </TableCell>
                             </TableRow>
                             :
-                            filteredAndSortedTransactions?.map((transaction) => (
+                            paginatedTransactions?.map((transaction) => (
                                 <TableRow key={transaction.id}>
                                     <TableCell className="w-[50px]">
                                         <Checkbox
@@ -332,6 +365,33 @@ const TransactionTable = ({ transactions }) => {
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="cursor-pointer"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="cursor-pointer"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    >
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
         </div>
     )
 }
