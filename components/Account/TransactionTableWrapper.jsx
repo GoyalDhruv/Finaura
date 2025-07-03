@@ -15,7 +15,7 @@ const ITEMS_PER_PAGE = 10;
 const TransactionTableWrapper = ({ transactions }) => {
 
     const [selectedIds, setSelectedIds] = useState([]);
-    const [sortConfig, setSortConfig] = useState({ field: 'date', direction: 'asc' });
+    const [sortConfig, setSortConfig] = useState({ field: 'date', direction: 'desc' });
     const [search, setSearch] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [recurringFilter, setRecurringFilter] = useState('');
