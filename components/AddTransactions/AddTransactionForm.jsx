@@ -1,6 +1,5 @@
 'use client'
 
-import { createTransaction } from '@/actions/transaction'
 import { transactionSchema } from '@/app/lib/schema'
 import { useFetch } from '@/hooks/useFetch'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -17,6 +16,7 @@ import { Switch } from '../ui/switch'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { createTransaction } from '@/actions/transactions'
 
 const AddTransactionForm = ({ accounts, categories }) => {
     const router = useRouter();
