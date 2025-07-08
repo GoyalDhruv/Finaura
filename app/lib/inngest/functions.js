@@ -1,6 +1,6 @@
 import { db } from "@/lib/prisma";
 import { inngest } from "./client";
-import { isNewMonth } from "@/lib/helper";
+import { calculateNextRecurringDate, isNewMonth, isTransactionDue } from "@/lib/helper";
 import { sendEmail } from "@/actions/sendEmail";
 import EmailTemplate from "@/emails/template";
 
@@ -78,3 +78,113 @@ export const checkBadgetAlert = inngest.createFunction(
     }
   },
 );
+
+export const triggerRecurringTransactions = inngest.createFunction(
+  {
+    name: "Trigger Recurring Transactions",
+    id: "trigger-recurring-transactions",
+  },
+  { cron: "0 0 * * *" },
+  async ({ step }) => {
+    const recurringTransactions = await step.run(
+      "fetch-recurring-transactions",
+      async () => {
+        return await db.transaction.findMany({
+          where: {
+            isRecurring: true,
+            status: "COMPLETED",
+            OR: [
+              { lastProcessed: null },
+              { nextRecurringDate: { lte: new Date() } }
+            ]
+          }
+        })
+      }
+    )
+
+    if (recurringTransactions.length > 0) {
+      const events = recurringTransactions.map((transaction) => ({
+        name: "transaction.recurring.process",
+        data: {
+          transactionId: transaction.id,
+          userId: transaction.userId,
+        },
+      }));
+
+      await inngest.send(events);
+    }
+
+    return { triggered: recurringTransactions.length };
+  }
+);
+
+export const processRecurringTransactions = inngest.createFunction(
+  {
+    // name: "Process Recurring Transactions",
+    id: "process-recurring-transactions",
+    // throttle: {
+    //   limit: 10,
+    //   period: '1m',
+    //   key: 'event.data.userId'
+    // }
+  },
+  { event: "transaction.recurring.process" },
+  async ({ event, step }) => {
+    const transactionId = event.data.transactionId;
+    const userId = event.data.userId;
+
+    if (!transactionId || !userId) return { error: "Invalid transaction id or user id" };
+
+    await step.run('process-transaction', async () => {
+      const transaction = await db.transaction.findUnique({
+        where: {
+          id: transactionId,
+          userId
+        },
+        include: {
+          account: true
+        }
+      })
+
+      if (!transaction || !isTransactionDue(transaction)) return;
+
+      await db.$transaction(async (tx) => {
+
+        await tx.transaction.create({
+          data: {
+            type: transaction.type,
+            amount: transaction.amount,
+            description: `${transaction.description} (Recurring)`,
+            date: new Date(),
+            category: transaction.category,
+            userId: transaction.userId,
+            accountId: transaction.accountId,
+            isRecurring: false,
+          }
+        })
+
+        const balanceChange = transaction.type === "EXPENSE" ? -transaction.amount : transaction.amount;
+        await tx.account.update({
+          where: {
+            id: transaction.accountId
+          },
+          data: {
+            balance: {
+              increment: balanceChange
+            }
+          }
+        })
+
+        await tx.transaction.update({
+          where: {
+            id: transactionId
+          },
+          data: {
+            lastProcessed: new Date(),
+            nextRecurringDate: calculateNextRecurringDate(transaction.recurringInterval, new Date())
+          }
+        })
+      })
+    })
+  }
+)
