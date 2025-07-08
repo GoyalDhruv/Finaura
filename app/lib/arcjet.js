@@ -7,9 +7,9 @@ const aj = arcjet({
     rules:[
         tokenBucket({
             mode:'LIVE',
-            refillRate:1,
+            refillRate:10,
             interval:3600,
-            capacity:1
+            capacity:10
         })
     ]
 })

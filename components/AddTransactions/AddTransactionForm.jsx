@@ -17,6 +17,7 @@ import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createTransaction } from '@/actions/transactions'
+import ReceiptScanner from './ReceiptScanner'
 
 const AddTransactionForm = ({ accounts, categories }) => {
     const router = useRouter();
@@ -61,8 +62,22 @@ const AddTransactionForm = ({ accounts, categories }) => {
         }
     }, [transactionLoading, transactionData])
 
+    const handleScanComplete = (scannedData) => {
+        if (scannedData) {
+            setValue('amount', scannedData.amount.toString());
+            setValue('date', new Date(scannedData.date));
+            if (scannedData.description) {
+                setValue('description', scannedData.description);
+            }
+            if(scannedData.category) {
+                setValue('category', scannedData.category);
+            }
+        }
+    }
+
     return (
         <form className='space-y-6' onSubmit={handleSubmit(onSubmit)}>
+            <ReceiptScanner onScanComplete={handleScanComplete} />
 
             <div className='space-y-2'>
                 <label className='text-sm font-medium'>Type</label>
@@ -207,7 +222,7 @@ const AddTransactionForm = ({ accounts, categories }) => {
                 </div>
             }
 
-            <div className='flex gap-4'>
+            <div className='gap-4 grid md:grid-cols-2'>
                 <Button
                     type='submit'
                     className='w-full cursor-pointer'

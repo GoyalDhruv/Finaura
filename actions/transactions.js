@@ -75,7 +75,6 @@ export async function createTransaction(data) {
     }
 }
 
-
 export async function bulkDeleteTransaction(transactionsId) {
     try {
         const user = await getAuthenticatedUser();
