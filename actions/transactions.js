@@ -111,3 +111,105 @@ export async function bulkDeleteTransaction(transactionsId) {
         return { success: false, error: err.message };
     }
 }
+
+export async function getTransaction(id) {
+    try {
+        const user = await getAuthenticatedUser();
+
+        const transaction = await db.transaction.findUnique({
+            where: {
+                userId: user.id,
+                id
+            },
+        })
+
+        if (!transaction) throw new Error("Transactions not found");
+
+        return { success: true, data: serializeTransaction(transaction) };
+    } catch (e) {
+        throw new Error(e.message);
+    }
+}
+
+export async function updateTransaction(id, data) {
+    try {
+        const user = await getAuthenticatedUser();
+
+        const transaction = await db.transaction.findUnique({
+            where: {
+                userId: user.id,
+                id
+            },
+            include: {
+                account: true
+            }
+        })
+
+        if (!transaction) throw new Error("Transactions not found");
+
+        const req = await request();
+        const decision = await aj.protect(req, {
+            userId: user.id,
+            requested: 1
+        })
+
+        if (decision.isDenied()) {
+            if (decision.reason.isRateLimit()) {
+                const { remaining, reset } = decision.reason;
+                console.error({
+                    details: {
+                        remaining,
+                        reset,
+                    },
+                    code: "RATE_LIMIT_EXCEEDED"
+                })
+                throw new Error("Rate limit exceeded. Please try again later.");
+            }
+
+            console.error({
+                details: {
+                    reason: decision.reason,
+                },
+                code: "ACCESS_DENIED"
+            })
+            throw new Error("Access denied");
+        }
+
+        const account = await db.account.findUnique({ where: { id: transaction.accountId, userId: user.id } });
+
+        if (!account) throw new Error("Account not found");
+
+        const balanceChange = transaction.type === "EXPANSE" ? -transaction.amount.toNumber() : transaction.amount.toNumber();
+        const newBalance = data.type === "EXPANSE" ? -data.amount : data.amount;
+
+        const netBalanceChange = balanceChange - newBalance;
+
+        const updatedTransaction = await db.$transaction(async (tx) => {
+            const newTransaction = await tx.transaction.update({
+                where: { id },
+                data: {
+                    ...data,
+                    userId: user.id,
+                    nextRecurringDate: data.isRecurring && data.recurringInterval
+                        ? calculateNextRecurringDate(data.recurringInterval, data.date)
+                        : null,
+                }
+            });
+
+            await tx.account.update({
+                where: { id: transaction.accountId },
+                data: { balance: newBalance }
+            });
+
+            return newTransaction;
+        })
+
+        revalidatePath('/dashboard');
+        revalidatePath(`/account/${updatedTransaction.accountId}`);
+
+        return { success: true, data: serializeTransaction(updatedTransaction) };
+
+    } catch (error) {
+        throw new Error(error.message);
+    }
+}
