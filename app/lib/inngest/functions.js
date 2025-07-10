@@ -1,6 +1,6 @@
 import { db } from "@/lib/prisma";
 import { inngest } from "./client";
-import { calculateNextRecurringDate, isNewMonth, isTransactionDue } from "@/lib/helper";
+import { calculateNextRecurringDate, generateFinancialInsights, getMonthyStats, isNewMonth, isTransactionDue } from "@/lib/helper";
 import { sendEmail } from "@/actions/sendEmail";
 import EmailTemplate from "@/emails/template";
 
@@ -186,5 +186,47 @@ export const processRecurringTransactions = inngest.createFunction(
         })
       })
     })
+  }
+)
+
+export const generateMonthlyReports = inngest.createFunction(
+  {
+    name: "Generate Monthly Reports",
+    id: "generate-monthly-reports",
+  },
+  { cron: "0 0 1 * *" },
+  async ({ step }) => {
+    const users = await step.run("fetch-users", async () => {
+      return await db.user.findMany({
+        include: { accounts: true }
+      })
+    });
+
+    for (const user of users) {
+      await step.run(`generate-report-${user.id}`, async () => {
+        const lastMonth = new Date();
+        lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+        const stats = await getMonthyStats(user.id, lastMonth);
+        const monthName = lastMonth.toLocaleString('default', { month: 'long' });
+        const insights = await generateFinancialInsights(stats, monthName);
+
+        await sendEmail({
+          to: user.email,
+          subject: `Your Finaura Report for ${monthName}`,
+          react: EmailTemplate({
+            userName: user.name,
+            type: "monthly-report",
+            data: {
+              stats,
+              month: monthName,
+              insights,
+            }
+          })
+        });
+      })
+    }
+
+    return { processed: users.length };
   }
 )
