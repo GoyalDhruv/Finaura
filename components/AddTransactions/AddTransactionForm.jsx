@@ -1,6 +1,6 @@
 'use client'
 
-import { transactionSchema } from '@/app/lib/schema'
+import { transactionSchema } from '@/lib/schema'
 import { useFetch } from '@/hooks/useFetch'
 import { zodResolver } from '@hookform/resolvers/zod'
 import React, { useEffect } from 'react'

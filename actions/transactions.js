@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { calculateNextRecurringDate, serializeTransaction } from "@/lib/helper";
 import { db } from "@/lib/prisma";
 import { request } from "@arcjet/next";
-import aj from "@/app/lib/arcjet";
+import aj from "@/lib/arcjet";
 
 export async function createTransaction(data) {
     try {
