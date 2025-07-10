@@ -1,23 +1,27 @@
-import { getUserAccounts } from '@/actions/dashboard'
+import { getDashboardData, getUserAccounts } from '@/actions/dashboard'
 import CreateAccountDrawer from '@/components/CreateAccountDrawer'
 import { Card, CardContent } from '@/components/ui/card'
 import { Plus } from 'lucide-react'
-import React from 'react'
+import React, { Suspense } from 'react'
 import AccountCard from './_components/AccountCard'
 import { getCurrentBudget } from '@/actions/budget'
 import BudgetProgress from '@/components/Dashboard/BudgetProgress'
+import { BarLoader } from 'react-spinners'
+import DashboardOverview from '@/components/Dashboard/DashboardOverview'
 
 const DashboardPage = async () => {
 
     const accounts = await getUserAccounts();
-    
+
     const defaultAccount = accounts?.data?.find(account => account.isDefault);
-    
+
     let budgetData = null;
-    
+
     if (defaultAccount) {
         budgetData = await getCurrentBudget(defaultAccount.id);
     }
+
+    const transactions = await getDashboardData();
 
     return (
         <div className='px-5 space-y-5'>
@@ -30,6 +34,10 @@ const DashboardPage = async () => {
             }
 
             {/* Overview */}
+            <Suspense fallback={<BarLoader className='mt-2' width="100%" color="#36d7b7" />}>
+                <DashboardOverview transactions={transactions} accounts={accounts?.data} />
+            </Suspense>
+
 
             {/* Account Grid */}
 

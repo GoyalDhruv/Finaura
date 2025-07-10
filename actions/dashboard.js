@@ -76,4 +76,14 @@ export async function getUserAccounts() {
     } catch (e) {
         throw new Error(e.message);
     }
-}  
+}
+
+export const getDashboardData = async () => {
+    const user = await getAuthenticatedUser();
+    const transactions = await db.transaction.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' }
+    })
+
+    return transactions.map(serializeTransaction);
+}
