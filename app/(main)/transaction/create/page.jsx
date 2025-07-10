@@ -9,7 +9,7 @@ import { getTransaction } from '@/actions/transactions';
 const Transaction = async ({ searchParams }) => {
     const accounts = await getUserAccounts();
 
-    const params = await searchParams;
+    const params = searchParams;
     const editId = params?.id;
 
     let initialData = null;
